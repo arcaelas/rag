@@ -1,0 +1,11 @@
+{
+  "name": "arcaela-rag",
+  "description": "Personal RAG ecosystem with semantic memory, coding standards, and specialized agents",
+  "version": "1.0.0",
+  "author": {
+    "name": "Miguel Guevara",
+    "email": "arcaela.reyes@gmail.com"
+  },
+  "repository": "https://github.com/arcaela/rag",
+  "license": "MIT"
+}

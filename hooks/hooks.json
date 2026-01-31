@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'RAG plugin loaded. Skills: nextjs-structure, git-flow, coding-patterns. Agents: publisher, reviewer, knowledge.'"
+          }
+        ]
+      }
+    ]
+  }
+}
