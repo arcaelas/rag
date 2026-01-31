@@ -167,7 +167,7 @@ Collection name: `arcaelas_mcp_rag_collection`
 
 ```bash
 # Clone repository
-git clone https://github.com/arcaela/rag.git
+git clone https://github.com/arcaelas/rag.git
 cd rag
 
 # Install dependencies
@@ -189,6 +189,6 @@ MIT © Miguel Guevara (Arcaela)
 
 ## Links
 
-- [GitHub](https://github.com/arcaela/rag)
-- [Issues](https://github.com/arcaela/rag/issues)
+- [GitHub](https://github.com/arcaelas/rag)
+- [Issues](https://github.com/arcaelas/rag/issues)
 - [npm](https://www.npmjs.com/package/@arcaelas/rag)

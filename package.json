@@ -35,11 +35,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/arcaela/rag"
+    "url": "https://github.com/arcaelas/rag"
   },
-  "homepage": "https://github.com/arcaela/rag#readme",
+  "homepage": "https://github.com/arcaelas/rag#readme",
   "bugs": {
-    "url": "https://github.com/arcaela/rag/issues"
+    "url": "https://github.com/arcaelas/rag/issues"
   },
   "license": "MIT",
   "engines": {
