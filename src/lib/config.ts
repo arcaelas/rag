@@ -10,7 +10,7 @@ const __dirname = dirname(__filename);
 const get_data_dir = () => {
   const is_global = __dirname.includes("node_modules");
   if (is_global) {
-    return resolve(homedir(), ".cache", "@arcaelas", "mcp-rag", "data");
+    return resolve(homedir(), ".cache", "@arcaelas", "rag", "data");
   }
   return resolve(__dirname, "../../data");
 };
