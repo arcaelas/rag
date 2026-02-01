@@ -1,6 +1,12 @@
 # @arcaelas/rag
 
+[![npm version](https://badge.fury.io/js/@arcaelas%2Frag.svg)](https://www.npmjs.com/package/@arcaelas/rag)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js >= 18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+
 MCP server with Ollama + Vectra for semantic memory and RAG operations.
+
+**Build intelligent AI agents with persistent semantic memory** - Store, search, and retrieve knowledge using vector embeddings, powered by local Ollama models and Vectra vector database.
 
 ## Features
 
@@ -183,12 +189,38 @@ yarn start
 yarn dev
 ```
 
+## Contributing
+
+Contributions are welcome! Please read our contributing guidelines before submitting PRs.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for security policies and reporting vulnerabilities.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for release history.
+
 ## License
 
 MIT © Miguel Guevara (Arcaela)
 
 ## Links
 
-- [GitHub](https://github.com/arcaelas/rag)
-- [Issues](https://github.com/arcaelas/rag/issues)
-- [npm](https://www.npmjs.com/package/@arcaelas/rag)
+- [npm Package](https://www.npmjs.com/package/@arcaelas/rag)
+- [GitHub Repository](https://github.com/arcaelas/rag)
+- [Issues & Bug Reports](https://github.com/arcaelas/rag/issues)
+- [Model Context Protocol](https://modelcontextprotocol.io)
+- [Ollama](https://ollama.com)
+
+## Support
+
+- 📧 Email: arcaela.reyes@gmail.com
+- 🐛 Issues: [GitHub Issues](https://github.com/arcaelas/rag/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/arcaelas/rag/discussions)
