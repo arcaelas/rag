@@ -15,13 +15,33 @@ const get_data_dir = () => {
   return resolve(__dirname, "../../data");
 };
 
+// Parse CLI arguments
+const args = process.argv.slice(2);
+const get_arg = (name: string): string | undefined => {
+  const index = args.indexOf(name);
+  return index !== -1 && args[index + 1] ? args[index + 1] : undefined;
+};
+
 export const config = {
-  ollama: {
-    hostname: process.env.OLLAMA_HOSTNAME || "http://localhost:11434",
-    model_name: process.env.OLLAMA_MODEL_NAME || "nomic-embed-text",
-  },
-  chroma: {
-    dirname: get_data_dir(),
-    collection: "arcaelas_mcp_rag_collection",
-  },
+  OLLAMA_BASE_URL:
+    get_arg("--ollama-url") ||
+    process.env.OLLAMA_BASE_URL ||
+    "http://localhost:11434",
+
+  OLLAMA_EMBEDDING_MODEL:
+    get_arg("--embedding-model") ||
+    process.env.OLLAMA_EMBEDDING_MODEL ||
+    "mxbai-embed-large",
+
+  OLLAMA_RESUME_MODEL:
+    get_arg("--resume-model") ||
+    process.env.OLLAMA_RESUME_MODEL ||
+    "qwen2.5:3b",
+
+  COLLECTION_NAME:
+    get_arg("--collection") ||
+    process.env.COLLECTION_NAME ||
+    "arcaelas_mcp_rag_collection",
+
+  DATA_DIR: get_data_dir(),
 } as const;

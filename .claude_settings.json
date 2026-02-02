@@ -1,0 +1,29 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  },
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read(./**)",
+      "Write(./**)",
+      "Edit(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Read(/home/arcaela/Documentos/arcaelas/rag/**)",
+      "Write(/home/arcaela/Documentos/arcaelas/rag/**)",
+      "Edit(/home/arcaela/Documentos/arcaelas/rag/**)",
+      "Glob(/home/arcaela/Documentos/arcaelas/rag/**)",
+      "Grep(/home/arcaela/Documentos/arcaelas/rag/**)",
+      "Read(/home/arcaela/Documentos/arcaelas/rag/.arko-studio/ideation/**)",
+      "Write(/home/arcaela/Documentos/arcaelas/rag/.arko-studio/ideation/**)",
+      "Edit(/home/arcaela/Documentos/arcaelas/rag/.arko-studio/ideation/**)",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "mcp__context7__resolve-library-id(*)",
+      "mcp__context7__get-library-docs(*)"
+    ]
+  }
+}
