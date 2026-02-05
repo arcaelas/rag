@@ -283,12 +283,14 @@ export async function upload(filename: string) {
  * @returns Resumen generado
  */
 export async function analyze(context: string): Promise<string> {
-  const response = await ollama_client.post("/api/chat", {
-    model: config.OLLAMA_RESUME_MODEL,
-    messages: [
-      {
-        role: "system",
-        content: `Eres un asistente técnico experto en análisis y síntesis de documentación. Tu tarea es analizar el contexto proporcionado y generar un resumen preciso, técnico y objetivo.
+  const response = await ollama_client.post(
+    "/api/chat",
+    {
+      model: config.OLLAMA_RESUME_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: `Eres un asistente técnico experto en análisis y síntesis de documentación. Tu tarea es analizar el contexto proporcionado y generar un resumen preciso, técnico y objetivo.
 
 REGLAS ESTRICTAS:
 - Analiza SOLO el contenido proporcionado
@@ -299,22 +301,26 @@ REGLAS ESTRICTAS:
 - Preserva detalles importantes (código, ejemplos, listas)
 - Si hay tablas o estructuras, manténlas
 - Responde en el mismo idioma del contexto`,
+        },
+        {
+          role: "user",
+          content: context,
+        },
+        {
+          role: "system",
+          content: `Genera ahora el análisis completo. Recuerda: respuesta directa, sin meta-comentarios, sin saludos, sin introducciones.`,
+        },
+      ],
+      options: {
+        temperature: 0.2,
+        num_predict: 2000,
       },
-      {
-        role: "user",
-        content: context,
-      },
-      {
-        role: "system",
-        content: `Genera ahora el análisis completo. Recuerda: respuesta directa, sin meta-comentarios, sin saludos, sin introducciones.`,
-      },
-    ],
-    options: {
-      temperature: 0.2,
-      num_predict: 2000,
+      stream: false,
     },
-    stream: false,
-  });
+    {
+      timeout: 90000, // 90 segundos - override para operaciones de análisis pesadas
+    }
+  );
 
   return response.data.message.content.trim();
 }
