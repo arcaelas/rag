@@ -43,5 +43,15 @@ export const config = {
     process.env.COLLECTION_NAME ||
     "arcaelas_mcp_rag_collection",
 
+  CHUNK_SIZE: parseInt(
+    get_arg("--chunk-size") || process.env.CHUNK_SIZE || "1600",
+    10
+  ),
+
+  CHUNK_OVERLAP: parseInt(
+    get_arg("--chunk-overlap") || process.env.CHUNK_OVERLAP || "200",
+    10
+  ),
+
   DATA_DIR: get_data_dir(),
 } as const;

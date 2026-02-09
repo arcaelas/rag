@@ -9,38 +9,61 @@ import * as schemas from "./schemas.js";
 
 const server = new McpServer({
   name: "rag-memory-server",
-  version: "2.0.0",
+  version: "3.0.0",
 });
 
-// Tool: save
+function ok(data: unknown) {
+  return {
+    content: [
+      { type: "text" as const, text: JSON.stringify(data, null, 2) },
+    ],
+  };
+}
+
+// Tool: remember
 server.registerTool(
-  "save",
+  "remember",
   {
     description:
-      "Guarda conocimiento en la base de datos personal. Usa cuando el usuario comparte estándares, preferencias, convenciones o documentación que debe persistir. Soporta relevancia (1-10) y etiquetas.",
-    inputSchema: schemas.save,
+      "Store short knowledge in semantic memory. Use for facts, preferences, conventions, or any brief data that should persist. For long text or files, use 'document' instead.",
+    inputSchema: schemas.remember,
   },
-  async ({ context, relevance, tag }) => {
-    const id = await rag.save(context, { relevance, tag });
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(
-            {
-              success: true,
-              id,
-              context,
-              relevance,
-              tag,
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
-  }
+  async ({ content, tags }) => ok(await rag.remember(content, tags))
+);
+
+// Tool: document
+server.registerTool(
+  "document",
+  {
+    description:
+      "Ingest long text or files. Automatically splits into overlapping chunks, embeds each chunk, and stores with document-chunk hierarchy. Provide 'content' or 'filename'.",
+    inputSchema: schemas.document,
+  },
+  async ({ content, filename, tags }) =>
+    ok(await rag.ingest({ content, filename, tags }))
+);
+
+// Tool: recall
+server.registerTool(
+  "recall",
+  {
+    description:
+      "Semantic search across the knowledge base. Returns fully assembled text per document, ranked by relevance. Enable 'hyde' for question-style queries to improve retrieval accuracy.",
+    inputSchema: schemas.recall,
+  },
+  async ({ query, limit, threshold, tags, hyde }) =>
+    ok(await rag.recall({ query, limit, threshold, tags, hyde }))
+);
+
+// Tool: forget
+server.registerTool(
+  "forget",
+  {
+    description:
+      "Delete documents or memories by ID with cascade. Removes all associated chunks from the vector index. Accepts a single ID or an array of IDs.",
+    inputSchema: schemas.forget,
+  },
+  async ({ ids }) => ok(await rag.forget(ids))
 );
 
 // Tool: list
@@ -48,109 +71,10 @@ server.registerTool(
   "list",
   {
     description:
-      "Lista todos los registros almacenados con paginación. Retorna ID, content, relevance, tags, created_at.",
+      "List stored documents and memories with pagination. Returns preview, tags, type, and chunk count per entry. Optionally filter by tags.",
     inputSchema: schemas.list,
   },
-  async ({ offset, limit }) => {
-    const result = await rag.list(offset, limit);
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
-    };
-  }
-);
-
-// Tool: search
-server.registerTool(
-  "search",
-  {
-    description:
-      "Búsqueda semántica en el RAG. Retorna documentos ordenados por relevancia (score) con paginación. Usa para ver resultados detallados con metadatos.",
-    inputSchema: schemas.search,
-  },
-  async ({ context, offset, limit }) => {
-    const results = await rag.search(context, offset, limit);
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(
-            {
-              context,
-              results,
-              count: results.length,
-              offset,
-              limit,
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
-  }
-);
-
-// Tool: destroy
-server.registerTool(
-  "destroy",
-  {
-    description: "Elimina permanentemente un registro por su ID. Acción irreversible.",
-    inputSchema: schemas.destroy,
-  },
-  async ({ id }) => {
-    await rag.destroy(id);
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(
-            {
-              success: true,
-              id,
-              message: `Registro ${id} eliminado`,
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
-  }
-);
-
-// Tool: update
-server.registerTool(
-  "update",
-  {
-    description:
-      "Actualiza el contenido de un registro existente. Preserva relevance, tags y created_at. Agrega updated_at.",
-    inputSchema: schemas.update,
-  },
-  async ({ id, context }) => {
-    await rag.update(id, context);
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(
-            {
-              success: true,
-              id,
-              context,
-              message: `Registro ${id} actualizado`,
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
-  }
+  async ({ offset, limit, tags }) => ok(await rag.list(offset, limit, tags))
 );
 
 // Tool: download
@@ -158,28 +82,11 @@ server.registerTool(
   "download",
   {
     description:
-      "Exporta registros a archivo JSONL temporal. Retorna ruta del archivo generado. Default: 512 registros.",
+      "Export the knowledge base as paginated JSONL. Each line is a complete entry with fully assembled content, type, and tags. Useful for backups or migration.",
     inputSchema: schemas.download,
   },
-  async ({ offset, limit }) => {
-    const filename = await rag.download(offset, limit);
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(
-            {
-              filename,
-              offset,
-              limit,
-            },
-            null,
-            2
-          ),
-        },
-      ],
-    };
-  }
+  async ({ offset, limit, tags }) =>
+    ok(await rag.download(offset, limit, tags))
 );
 
 // Tool: upload
@@ -187,104 +94,52 @@ server.registerTool(
   "upload",
   {
     description:
-      "Importa registros desde archivo JSONL. Cada línea debe tener 'context' (requerido), opcionalmente 'relevance' y 'tag'. Retorna estadísticas de importación.",
+      "Import documents and memories from JSONL. Each line must be {type: 'memory'|'document', content: string, tags?: string[]}. Re-embeds all content on import.",
     inputSchema: schemas.upload,
   },
-  async ({ filename }) => {
-    const result = await rag.upload(filename);
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(result, null, 2),
-        },
-      ],
-    };
-  }
-);
-
-// Tool: analyze
-server.registerTool(
-  "analyze",
-  {
-    description:
-      "Analiza texto usando modelo LLM local (config.OLLAMA_RESUME_MODEL). Genera resumen técnico objetivo sin meta-comentarios. Retorna texto directo.",
-    inputSchema: schemas.analyze,
-  },
-  async ({ context }) => {
-    const analysis = await rag.analyze(context);
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: analysis,
-        },
-      ],
-    };
-  }
-);
-
-// Tool: research
-server.registerTool(
-  "research",
-  {
-    description:
-      "Investiga en el RAG: búsqueda semántica + análisis automático. Retorna síntesis directa de los documentos encontrados. Una llamada = búsqueda + análisis.",
-    inputSchema: schemas.research,
-  },
-  async ({ context, offset, limit }) => {
-    const analysis = await rag.research(context, offset, limit);
-    return {
-      content: [
-        {
-          type: "text" as const,
-          text: analysis,
-        },
-      ],
-    };
-  }
+  async ({ jsonl }) => ok(await rag.upload(jsonl))
 );
 
 async function main() {
   try {
-    console.error("🚀 Iniciando RAG Memory Server v2.0...");
+    console.error("Iniciando RAG Memory Server v3.0...");
     console.error("");
-    console.error("📋 Configuración:");
+    console.error("Configuracion:");
     console.error(`   OLLAMA_BASE_URL: ${config.OLLAMA_BASE_URL}`);
     console.error(`   OLLAMA_EMBEDDING_MODEL: ${config.OLLAMA_EMBEDDING_MODEL}`);
-    console.error(`   OLLAMA_RESUME_MODEL: ${config.OLLAMA_RESUME_MODEL}`);
-    console.error(`   COLLECTION_NAME: ${config.COLLECTION_NAME}`);
+    console.error(`   CHUNK_SIZE: ${config.CHUNK_SIZE}`);
+    console.error(`   CHUNK_OVERLAP: ${config.CHUNK_OVERLAP}`);
     console.error(`   DATA_DIR: ${config.DATA_DIR}`);
     console.error("");
 
-    // Verificar conexión con Ollama
-    console.error(`📡 Conectando a Ollama en ${config.OLLAMA_BASE_URL}...`);
+    // Verificar conexion con Ollama
+    console.error(
+      `Conectando a Ollama en ${config.OLLAMA_BASE_URL}...`
+    );
     await ollama_client.get("/api/tags");
-    console.error(`✅ Ollama conectado`);
+    console.error("Ollama conectado");
 
-    // Inicializar índice vectorial
-    console.error(`💾 Inicializando índice vectorial...`);
+    // Inicializar indice vectorial + registro de documentos
+    console.error("Inicializando indice vectorial...");
     await rag.init_collection();
-    console.error(`✅ Índice vectorial listo`);
+    console.error("Indice vectorial listo");
 
     // Conectar servidor MCP via stdio
     const transport = new StdioServerTransport();
     await server.connect(transport);
 
     console.error("");
-    console.error("✅ Servidor MCP corriendo en stdio");
-    console.error("🎯 Herramientas disponibles:");
-    console.error("   - save         (guardar con relevance + tags)");
-    console.error("   - list         (listar con paginación)");
-    console.error("   - search       (búsqueda con metadatos)");
-    console.error("   - destroy      (eliminar por ID)");
-    console.error("   - update       (actualizar registro)");
-    console.error("   - download     (exportar a JSONL)");
-    console.error("   - upload       (importar desde JSONL)");
-    console.error("   - analyze      (análisis LLM) ⭐");
-    console.error("   - research     (búsqueda + análisis) ⭐");
+    console.error("Servidor MCP corriendo en stdio");
+    console.error("Herramientas disponibles:");
+    console.error("   - remember    (guardar conocimiento puntual)");
+    console.error("   - document    (ingestar contenido largo/archivos)");
+    console.error("   - recall      (busqueda semantica)");
+    console.error("   - forget      (eliminar documentos/memorias)");
+    console.error("   - list        (listar documentos y memorias)");
+    console.error("   - download    (exportar base de conocimiento)");
+    console.error("   - upload      (importar desde JSONL)");
   } catch (error) {
-    console.error("❌ Error fatal:", error);
+    console.error("Error fatal:", error);
     process.exit(1);
   }
 }

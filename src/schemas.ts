@@ -1,17 +1,46 @@
 import { z } from "zod";
 
-export const save = z.object({
-  context: z.string().describe("Texto a guardar en la memoria"),
-  relevance: z
-    .number()
-    .min(1)
-    .max(10)
-    .optional()
-    .describe("Relevancia del contenido (1-10)"),
-  tag: z
+const Tags = z.union([z.string(), z.array(z.string())]);
+
+export const remember = z.object({
+  content: z.string().describe("Text to store in semantic memory"),
+  tags: Tags.optional().describe("Tags for categorization"),
+});
+
+export const document = z.object({
+  content: z
     .string()
     .optional()
-    .describe("Etiquetas separadas por comas o espacios (ej: 'typescript, react' o 'git nextjs')"),
+    .describe("Long text to process and split into chunks"),
+  filename: z
+    .string()
+    .optional()
+    .describe("Absolute file path to ingest"),
+  tags: Tags.optional().describe("Tags for categorization"),
+});
+
+export const recall = z.object({
+  query: z.string().describe("Semantic search query"),
+  limit: z
+    .number()
+    .min(1)
+    .max(20)
+    .default(5)
+    .optional()
+    .describe("Max results to return"),
+  threshold: z
+    .number()
+    .min(0)
+    .max(1)
+    .default(0.3)
+    .optional()
+    .describe("Minimum relevance score (0-1)"),
+  tags: Tags.optional().describe("Filter results by tags"),
+  hyde: z
+    .boolean()
+    .default(false)
+    .optional()
+    .describe("Use HyDE (Hypothetical Document Embedding) for question-style queries"),
 });
 
 export const list = z.object({
@@ -20,40 +49,21 @@ export const list = z.object({
     .min(0)
     .default(0)
     .optional()
-    .describe("Elementos a omitir antes de retornar"),
+    .describe("Entries to skip"),
   limit: z
     .number()
     .min(1)
     .max(100)
     .default(10)
     .optional()
-    .describe("Cantidad de elementos a retornar"),
+    .describe("Max entries to return"),
+  tags: Tags.optional().describe("Filter by tags"),
 });
 
-export const search = z.object({
-  context: z.string().describe("Criterio de búsqueda"),
-  offset: z
-    .number()
-    .min(0)
-    .default(0)
-    .optional()
-    .describe("Elementos a omitir (paginación)"),
-  limit: z
-    .number()
-    .min(1)
-    .max(50)
-    .default(10)
-    .optional()
-    .describe("Máximo de resultados a retornar"),
-});
-
-export const destroy = z.object({
-  id: z.string().describe("Identificador del registro a eliminar"),
-});
-
-export const update = z.object({
-  id: z.string().describe("Identificador del registro a actualizar"),
-  context: z.string().describe("Nuevo texto del registro"),
+export const forget = z.object({
+  ids: z
+    .union([z.string(), z.array(z.string())])
+    .describe("ID or array of IDs to delete"),
 });
 
 export const download = z.object({
@@ -62,37 +72,21 @@ export const download = z.object({
     .min(0)
     .default(0)
     .optional()
-    .describe("Elementos a omitir antes de descargar"),
+    .describe("Entries to skip"),
   limit: z
     .number()
     .min(1)
-    .max(10000)
-    .default(512)
+    .max(200)
+    .default(50)
     .optional()
-    .describe("Cantidad máxima de elementos a descargar"),
+    .describe("Max entries to export per page"),
+  tags: Tags.optional().describe("Filter by tags"),
 });
 
 export const upload = z.object({
-  filename: z.string().describe("Ruta absoluta del archivo JSONL a importar"),
-});
-
-export const analyze = z.object({
-  context: z.string().describe("Texto completo a procesar y analizar"),
-});
-
-export const research = z.object({
-  context: z.string().describe("Criterio de búsqueda para investigar"),
-  offset: z
-    .number()
-    .min(0)
-    .default(0)
-    .optional()
-    .describe("Elementos a omitir (paginación)"),
-  limit: z
-    .number()
-    .min(1)
-    .max(50)
-    .default(10)
-    .optional()
-    .describe("Máximo de resultados antes de analizar"),
+  jsonl: z
+    .string()
+    .describe(
+      "JSONL content to import. Each line: {type: 'memory'|'document', content: string, tags?: string[]}"
+    ),
 });
