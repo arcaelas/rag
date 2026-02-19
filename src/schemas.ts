@@ -86,7 +86,12 @@ export const download = z.object({
 export const upload = z.object({
   jsonl: z
     .string()
+    .optional()
     .describe(
-      "JSONL content to import. Each line: {type: 'memory'|'document', content: string, tags?: string[]}"
+      "JSONL content to import. Each line: {type?: 'memory'|'document', content: string, tags?: string[]}"
     ),
+  filename: z
+    .string()
+    .optional()
+    .describe("Absolute file path to a JSONL file to import"),
 });
