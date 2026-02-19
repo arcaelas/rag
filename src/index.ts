@@ -94,10 +94,10 @@ server.registerTool(
   "upload",
   {
     description:
-      "Import documents and memories from JSONL. Each line must be {type: 'memory'|'document', content: string, tags?: string[]}. Re-embeds all content on import.",
+      "Import documents and memories from JSONL. Each line must be {type?: 'memory'|'document', content: string, tags?: string[]}. Re-embeds all content on import. Provide 'jsonl' (string content) or 'filename' (file path), or both.",
     inputSchema: schemas.upload,
   },
-  async ({ jsonl }) => ok(await rag.upload(jsonl))
+  async ({ jsonl, filename }) => ok(await rag.upload({ jsonl, filename }))
 );
 
 async function main() {

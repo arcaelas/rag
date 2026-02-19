@@ -1,7 +1,9 @@
 import { randomUUID } from "crypto";
-import { existsSync } from "fs";
-import { mkdir, readFile, writeFile } from "fs/promises";
+import { createReadStream, existsSync } from "fs";
+import { appendFile, mkdir, readFile, unlink, writeFile } from "fs/promises";
+import { tmpdir } from "os";
 import { join } from "path";
+import { createInterface } from "readline";
 import { LocalIndex } from "vectra";
 import { ollama_client } from "./axios.js";
 import { chunk as split_chunks } from "./chunker.js";
@@ -407,35 +409,65 @@ export async function download(
 
 // --- Upload ---
 
-export async function upload(
-  jsonl: string
-): Promise<{ imported: number; errors: string[] }> {
-  const lines = jsonl.split("\n").filter((l) => l.trim().length > 0);
+export async function upload(params: {
+  jsonl?: string;
+  filename?: string;
+}): Promise<{ imported: number; errors: string[] }> {
+  if (!params.jsonl && !params.filename) {
+    throw new Error("Se requiere 'jsonl' o 'filename'");
+  }
+
+  const tmp_path = join(tmpdir(), `rag_upload_${randomUUID()}.jsonl`);
   let imported = 0;
   const errors: string[] = [];
 
-  for (let i = 0; i < lines.length; i++) {
-    try {
-      const entry = JSON.parse(lines[i]);
-
-      if (!entry.content || typeof entry.content !== "string") {
-        errors.push(`Line ${i + 1}: missing or invalid 'content'`);
-        continue;
-      }
-
-      if (entry.type === "memory") {
-        await remember(entry.content, entry.tags);
-      } else if (entry.type === "document") {
-        await ingest({ content: entry.content, tags: entry.tags });
-      } else {
-        errors.push(`Line ${i + 1}: unknown type '${entry.type}'`);
-        continue;
-      }
-
-      imported++;
-    } catch (e) {
-      errors.push(`Line ${i + 1}: ${(e as Error).message}`);
+  try {
+    if (params.jsonl) {
+      await appendFile(tmp_path, params.jsonl, "utf-8");
     }
+    if (params.filename) {
+      const content = await readFile(params.filename, "utf-8");
+      if (params.jsonl) await appendFile(tmp_path, "\n", "utf-8");
+      await appendFile(tmp_path, content, "utf-8");
+    }
+
+    const rl = createInterface({
+      input: createReadStream(tmp_path, "utf-8"),
+      crlfDelay: Infinity,
+    });
+
+    let line_num = 0;
+    for await (const line of rl) {
+      line_num++;
+      const trimmed = line.trim();
+      if (trimmed.length === 0) continue;
+
+      try {
+        const entry = JSON.parse(trimmed);
+        const type = entry.type ?? "document";
+        const content = entry.content;
+
+        if (!content || typeof content !== "string" || content.trim().length === 0) {
+          errors.push(`Line ${line_num}: missing or empty 'content'`);
+          continue;
+        }
+
+        if (type === "memory") {
+          await remember(content, entry.tags);
+        } else if (type === "document") {
+          await ingest({ content, tags: entry.tags });
+        } else {
+          errors.push(`Line ${line_num}: unknown type '${type}'`);
+          continue;
+        }
+
+        imported++;
+      } catch (e) {
+        errors.push(`Line ${line_num}: ${(e as Error).message}`);
+      }
+    }
+  } finally {
+    await unlink(tmp_path).catch(() => {});
   }
 
   return { imported, errors };
